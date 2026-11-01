@@ -30,11 +30,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <ToastContainer
           position="top-right"
-          autoClose={3000}
-          theme="colored"
+          autoClose={3500}
+          hideProgressBar={false}
           newestOnTop
           closeOnClick
           pauseOnHover
+          draggable
+          theme="light"
+          toastClassName="!rounded-xl !border !border-violet-100 !shadow-lg"
+          progressClassName="!bg-violet-600"
         />
         <Navbar />
         {children}

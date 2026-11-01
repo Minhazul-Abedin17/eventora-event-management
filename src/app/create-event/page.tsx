@@ -64,6 +64,7 @@ const CreateEventPage = () => {
   };
 
   // Submit form and show data in console
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -79,14 +80,29 @@ const CreateEventPage = () => {
       const data = await res.json();
 
       if (res.ok && data.acknowledged) {
-        toast.success("🎉 Event created successfully!");
+        toast.success("Your event has been created successfully!", {
+          icon: "🎉",
+        });
+
         console.log("Event Form Data:", form);
+
+        // Clear all form fields
+        setForm({
+          eventName: "",
+          category: "",
+          imageUrl: "",
+          eventDate: "",
+          eventTime: "",
+          location: "",
+          seats: "",
+          description: "",
+        });
       } else {
-        toast.error("Failed to create event. Please try again!");
+        toast.error("Event creation failed! Please try again.");
       }
     } catch (error) {
-      console.error("Error creating event:", error);
-      toast.error("Something went wrong! Please check your server.");
+      console.log("Error:", error);
+      toast.error("Server error! Please check your connection.");
     }
   };
 
@@ -277,10 +293,12 @@ const CreateEventPage = () => {
                   onChange={handleChange}
                   placeholder="Describe your event, its purpose, activities and how people can participate..."
                   required
-                  className="min-h-36 resize-y"
+                  className="min-h-22 resize-y"
                 />
-                <p className="text-xs text-gray-400">
-                  Write a clear description about your event.
+                <p className="text-xs text-center text-gray-400">
+                  Please fill out the form above accurately by providing all
+                  your correct information. Once completed, click create event
+                  option.
                 </p>
               </div>
               {/* Buttons */}
