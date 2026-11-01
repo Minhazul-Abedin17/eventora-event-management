@@ -1,7 +1,9 @@
+
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Eye,
@@ -15,8 +17,12 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { FcGoogle } from "react-icons/fc";
+import { authClient } from "@/lib/auth-client";
 
 const SignUpPage = () => {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [image, setImage] = useState("");
@@ -25,11 +31,22 @@ const SignUpPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Signup handler
-  const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Prevent multiple submissions
+    if (isLoading) return;
+
+    // 1. Validate input fields
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      toast.error("Please fill in all required fields!");
+      return;
+    }
+
+    // 2. Validate password
     if (password !== confirmPassword) {
       toast.error("Passwords do not match!");
       return;
@@ -40,18 +57,42 @@ const SignUpPage = () => {
       return;
     }
 
-    const userData = {
-      name,
-      email,
-      image,
-      password,
-    };
+    try {
+      setIsLoading(true);
 
-    console.log("Signup Data:", userData);
+      // 3. Create account with Better Auth
+      const { data, error } = await authClient.signUp.email({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        image: image.trim() || undefined,
+        callbackURL: "/",
+      });
 
-    toast.info(
-      "Signup form is ready! Backend authentication will be connected later.",
-    );
+      // 4. Handle error
+      if (error) {
+        console.log("Signup Error:", error);
+        toast.error(error.message || "Signup failed!");
+        return;
+      }
+
+      // 5. Handle success
+      if (data) {
+        console.log("Signup Successful:", data);
+
+        toast.success("Account created successfully! Welcome to Eventora.");
+
+        // 6. Redirect to homepage
+        setTimeout(() => {
+          router.push("/");
+        }, 1200);
+      }
+    } catch (error) {
+      console.log("Signup Error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Google signup handler
@@ -64,7 +105,6 @@ const SignUpPage = () => {
       <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl shadow-violet-100 lg:grid-cols-2">
         {/* Left Side - Welcome Section */}
 
-        {/* Left Side - Welcome Section */}
         <div className="relative hidden flex-col justify-between overflow-hidden bg-[#17132F] p-10 text-white lg:flex xl:p-12">
           {/* Background Decorations */}
           <div className="absolute -right-28 -top-24 h-80 w-80 rounded-full bg-violet-600/30 blur-[90px]" />
@@ -224,9 +264,9 @@ const SignUpPage = () => {
           <button
             type="button"
             onClick={handleGoogleSignUp}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-3 font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-violet-300 hover:bg-violet-50"
           >
-            <span className="text-xl font-bold text-blue-600">G</span>
+            <FcGoogle size={20} />
             Continue with Google
           </button>
 
@@ -385,10 +425,11 @@ const SignUpPage = () => {
             {/* Signup Button */}
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 active:scale-[0.99]"
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Create Account
-              <ArrowRight size={19} />
+              {isLoading ? "Creating Account..." : "Create Account"}
+              {!isLoading && <ArrowRight size={19} />}
             </button>
           </form>
 
