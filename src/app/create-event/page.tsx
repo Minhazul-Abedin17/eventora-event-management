@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,12 +8,12 @@ import {
   MapPin,
   Image as ImageIcon,
   Users,
-  Sparkles,
   ArrowLeft,
 } from "lucide-react";
 
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,7 +27,9 @@ import {
 } from "@/components/ui/card";
 
 const CreateEventPage = () => {
-  // All form data
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
+
   const [form, setForm] = useState({
     eventName: "",
     category: "",
@@ -38,7 +41,6 @@ const CreateEventPage = () => {
     description: "",
   });
 
-  // Set today's date as the minimum date
   useEffect(() => {
     const date = new Date();
 
@@ -51,11 +53,10 @@ const CreateEventPage = () => {
     document.getElementById("eventDate")?.setAttribute("min", today);
   }, []);
 
-  // Update form data
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     setForm({
       ...form,
@@ -63,30 +64,40 @@ const CreateEventPage = () => {
     });
   };
 
-  // Submit form and show data in console
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (isPending) return;
+
+    if (!user?.email) {
+      toast.error("Please login before creating an event.");
+      return;
+    }
+
     try {
+      const eventData = {
+        ...form,
+        email: user.email,
+        organizer: {
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        },
+      };
+
       const res = await fetch("http://localhost:8000/create-event", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(eventData),
       });
 
       const data = await res.json();
 
       if (res.ok && data.acknowledged) {
-        toast.success("Your event has been created successfully!", {
-          icon: "🎉",
-        });
+        toast.success("Your event has been created successfully!");
 
-        console.log("Event Form Data:", form);
-
-        // Clear all form fields
         setForm({
           eventName: "",
           category: "",
@@ -106,10 +117,36 @@ const CreateEventPage = () => {
     }
   };
 
+  if (isPending) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center text-violet-600">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Please Login First
+        </h2>
+        <p className="mt-2 text-gray-500">
+          You need to login before creating an event.
+        </p>
+        <Link
+          href="/login"
+          className="mt-5 rounded-lg bg-violet-600 px-6 py-3 font-semibold text-white"
+        >
+          Login Now
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-4xl">
-        {/* Heading */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Create Your <span className="text-violet-600">Event</span>
@@ -119,7 +156,7 @@ const CreateEventPage = () => {
             make a positive difference.
           </p>
         </div>
-        {/* Form Card */}
+
         <Card className="overflow-hidden rounded-2xl border-violet-100 bg-white shadow-xl shadow-violet-100/50">
           <CardHeader className="border-b border-violet-100 bg-violet-50/70 px-5 py-6 sm:px-8">
             <CardTitle className="text-xl font-bold text-gray-900">
@@ -129,9 +166,9 @@ const CreateEventPage = () => {
               Fill in the details below to create your event.
             </CardDescription>
           </CardHeader>
+
           <CardContent className="p-5 sm:p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Event Name & Category */}
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="eventName">Event Name *</Label>
@@ -145,6 +182,7 @@ const CreateEventPage = () => {
                     className="h-11"
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="category">Event Category *</Label>
                   <select
@@ -170,16 +208,14 @@ const CreateEventPage = () => {
                   </select>
                 </div>
               </div>
-              {/* Image URL */}
+
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">Event Image URL *</Label>
-
                 <div className="relative">
                   <ImageIcon
                     size={18}
                     className="absolute left-3 top-3 text-gray-400"
                   />
-
                   <Input
                     id="imageUrl"
                     name="imageUrl"
@@ -191,22 +227,19 @@ const CreateEventPage = () => {
                     className="h-11 pl-10"
                   />
                 </div>
-
                 <p className="text-xs text-gray-400">
                   Paste an image URL for your event cover.
                 </p>
               </div>
-              {/* Date & Time */}
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="eventDate">Event Date *</Label>
-
                   <div className="relative">
                     <CalendarDays
                       size={18}
                       className="absolute left-3 top-3 text-gray-400"
                     />
-
                     <Input
                       id="eventDate"
                       name="eventDate"
@@ -221,6 +254,7 @@ const CreateEventPage = () => {
                     Select today or any future date.
                   </p>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="eventTime">Event Time *</Label>
                   <div className="relative">
@@ -240,7 +274,7 @@ const CreateEventPage = () => {
                   </div>
                 </div>
               </div>
-              {/* Location & Seats */}
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="location">Event Location *</Label>
@@ -260,9 +294,9 @@ const CreateEventPage = () => {
                     />
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="seats">Available Seats *</Label>
-
                   <div className="relative">
                     <Users
                       size={18}
@@ -282,10 +316,9 @@ const CreateEventPage = () => {
                   </div>
                 </div>
               </div>
-              {/* Description */}
+
               <div className="space-y-2">
                 <Label htmlFor="description">Event Description *</Label>
-
                 <Textarea
                   id="description"
                   name="description"
@@ -295,13 +328,12 @@ const CreateEventPage = () => {
                   required
                   className="min-h-22 resize-y"
                 />
-                <p className="text-xs text-center text-gray-400">
+                <p className="text-center text-xs text-gray-400">
                   Please fill out the form above accurately by providing all
-                  your correct information. Once completed, click create event
-                  option.
+                  your correct information.
                 </p>
               </div>
-              {/* Buttons */}
+
               <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-between">
                 <Link
                   href="/"
@@ -310,6 +342,7 @@ const CreateEventPage = () => {
                   <ArrowLeft size={17} />
                   Back to Home
                 </Link>
+
                 <Button
                   type="submit"
                   className="h-11 rounded-lg bg-violet-600 px-8 font-semibold text-white hover:bg-violet-700"
@@ -321,6 +354,7 @@ const CreateEventPage = () => {
             </form>
           </CardContent>
         </Card>
+
         <p className="mt-6 text-center text-xs text-gray-400 sm:text-sm">
           Every great event starts with an idea. Make yours happen with
           Eventora.
@@ -329,4 +363,5 @@ const CreateEventPage = () => {
     </main>
   );
 };
+
 export default CreateEventPage;

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -96,10 +95,21 @@ const SignUpPage = () => {
   };
 
   // Google signup handler
-  const handleGoogleSignUp = () => {
-    toast.info("Google authentication will be connected later.");
-  };
+  const handleGoogleSignUp = async () => {
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
 
+      if (error) {
+        toast.error(error.message || "Google login failed!");
+      }
+    } catch (error) {
+      console.log("Google Login Error:", error);
+      toast.error("Google login failed. Please try again.");
+    }
+  };
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
       <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl shadow-violet-100 lg:grid-cols-2">

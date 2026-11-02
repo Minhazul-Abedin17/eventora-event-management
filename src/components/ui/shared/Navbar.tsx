@@ -52,7 +52,6 @@ const Navbar = () => {
 
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || "U";
 
-  // Sign Out
   const handleSignOut = async () => {
     setIsSigningOut(true);
 
@@ -78,8 +77,8 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-violet-100 bg-white/95 shadow-sm backdrop-blur-md">
-      <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-violet-100 bg-white/95 shadow-sm backdrop-blur-lg">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* Logo */}
         <Link href="/" className="shrink-0">
@@ -96,16 +95,15 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-8 lg:flex">
 
-          {/* Explore Events */}
           <Link
             href="/events"
-            className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-violet-600"
+            className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-violet-700"
           >
             <Compass size={18} />
             Explore Events
           </Link>
 
-          {/* Manage Events Dropdown */}
+          {/* Manage Events */}
           <div className="relative">
             <button
               type="button"
@@ -113,7 +111,7 @@ const Navbar = () => {
                 setDropdown(!dropdown);
                 setProfileOpen(false);
               }}
-              className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-violet-600"
+              className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-violet-700"
             >
               Manage Events
 
@@ -124,8 +122,7 @@ const Navbar = () => {
             </button>
 
             {dropdown && (
-              <div className="absolute left-0 top-10 z-50 w-56 rounded-xl border border-violet-100 bg-white p-2 shadow-xl shadow-violet-100/60">
-
+              <div className="absolute left-0 top-10 z-50 w-56 rounded-2xl border border-violet-100 bg-white p-2 shadow-xl shadow-violet-100/60">
                 {manageLinks.map((link) => {
                   const Icon = link.icon;
 
@@ -134,24 +131,21 @@ const Navbar = () => {
                       key={link.name}
                       href={link.href}
                       onClick={() => setDropdown(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 transition hover:bg-violet-50 hover:text-violet-700"
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-gray-600 transition hover:bg-violet-50 hover:text-violet-700"
                     >
                       <Icon size={18} />
                       {link.name}
                     </Link>
                   );
                 })}
-
               </div>
             )}
           </div>
         </nav>
 
-        {/* Desktop Authentication */}
+        {/* Desktop Profile */}
         <div className="hidden items-center gap-3 lg:flex">
-
           {user ? (
-            /* User Profile Dropdown */
             <div className="relative">
               <button
                 type="button"
@@ -159,87 +153,61 @@ const Navbar = () => {
                   setProfileOpen(!profileOpen);
                   setDropdown(false);
                 }}
-                className="flex items-center gap-2 rounded-full border border-violet-100 bg-white p-1.5 pr-3 transition hover:border-violet-300 hover:bg-violet-50"
+                className="flex items-center gap-2 rounded-full border border-transparent py-1.5 pl-1.5 pr-3 transition hover:border-violet-200 hover:bg-violet-50"
               >
-                <Avatar className="h-9 w-9 border border-violet-100">
+                <Avatar className="h-10 w-10 border-2 border-violet-100">
                   <AvatarImage
                     src={user.image || ""}
                     alt={user.name || "User"}
                   />
-
                   <AvatarFallback className="bg-violet-100 font-bold text-violet-700">
                     {userInitial}
                   </AvatarFallback>
                 </Avatar>
 
                 <span className="max-w-28 truncate text-sm font-semibold text-gray-700">
-                  {user.name || "My Account"}
+                  {user.name || "My Profile"}
                 </span>
 
                 <ChevronDown
-                  size={17}
+                  size={16}
                   className={`text-gray-500 transition-transform ${
                     profileOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
+              {/* Profile Dropdown */}
               {profileOpen && (
                 <div className="absolute right-0 top-14 z-50 w-72 overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-xl shadow-violet-100/60">
 
-                  {/* User Information */}
-                  <div className="border-b border-violet-100 bg-violet-50 p-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 border border-violet-200">
-                        <AvatarImage
-                          src={user.image || ""}
-                          alt={user.name || "User"}
-                        />
+                  <div className="flex items-center gap-3 bg-violet-50 p-5">
+                    <Avatar className="h-12 w-12 border-2 border-white">
+                      <AvatarImage
+                        src={user.image || ""}
+                        alt={user.name || "User"}
+                      />
+                      <AvatarFallback className="bg-violet-100 font-bold text-violet-700">
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
 
-                        <AvatarFallback className="bg-violet-100 font-bold text-violet-700">
-                          {userInitial}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-gray-900">
-                          {user.name || "User"}
-                        </p>
-
-                        <p className="truncate text-xs text-gray-500">
-                          {user.email}
-                        </p>
-                      </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-gray-900">
+                        {user.name || "User"}
+                      </p>
+                      <p className="truncate text-xs text-gray-500">
+                        {user.email}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Profile Options */}
                   <div className="p-2">
-                    <Link
-                      href="/my-events"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 transition hover:bg-violet-50 hover:text-violet-700"
-                    >
-                      <CalendarDays size={18} />
-                      My Dashboard
-                    </Link>
-
-                    <Link
-                      href="/my-bookings"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 transition hover:bg-violet-50 hover:text-violet-700"
-                    >
-                      <Ticket size={18} />
-                      My Bookings
-                    </Link>
-
-                    <div className="my-2 border-t border-gray-100" />
-
                     <button
                       type="button"
                       onClick={handleSignOut}
                       disabled={isSigningOut}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-50 disabled:opacity-50"
                     >
                       <LogOut size={18} />
                       {isSigningOut ? "Signing out..." : "Sign Out"}
@@ -265,7 +233,6 @@ const Navbar = () => {
               </Link>
             </>
           )}
-
         </div>
 
         {/* Mobile Menu */}
@@ -287,37 +254,32 @@ const Navbar = () => {
               </SheetTitle>
             </SheetHeader>
 
-            {/* Mobile User Profile */}
+            {/* Mobile Profile */}
             {user && (
-              <div className="mt-6 rounded-2xl border border-violet-100 bg-violet-50 p-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border border-violet-200">
-                    <AvatarImage
-                      src={user.image || ""}
-                      alt={user.name || "User"}
-                    />
+              <div className="mt-6 flex items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50 p-4">
+                <Avatar className="h-12 w-12 border-2 border-white">
+                  <AvatarImage
+                    src={user.image || ""}
+                    alt={user.name || "User"}
+                  />
+                  <AvatarFallback className="bg-violet-100 font-bold text-violet-700">
+                    {userInitial}
+                  </AvatarFallback>
+                </Avatar>
 
-                    <AvatarFallback className="bg-violet-100 font-bold text-violet-700">
-                      {userInitial}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-gray-900">
-                      {user.name}
-                    </p>
-
-                    <p className="truncate text-xs text-gray-500">
-                      {user.email}
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-gray-900">
+                    {user.name || "User"}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">
+                    {user.email}
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Mobile Navigation */}
             <nav className="mt-7 flex flex-col gap-1">
-
               <Link
                 href="/events"
                 onClick={() => setOpen(false)}
@@ -327,7 +289,6 @@ const Navbar = () => {
                 Explore Events
               </Link>
 
-              {/* Mobile Manage Events */}
               <p className="px-4 pb-2 pt-5 text-xs font-bold uppercase tracking-wider text-gray-400">
                 Manage Events
               </p>
@@ -383,6 +344,7 @@ const Navbar = () => {
             )}
           </SheetContent>
         </Sheet>
+
       </div>
     </header>
   );
