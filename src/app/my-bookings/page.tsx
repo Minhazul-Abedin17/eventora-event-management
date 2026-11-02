@@ -1,4 +1,3 @@
-
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -10,6 +9,7 @@ import {
   ArrowRight,
   Compass,
 } from "lucide-react";
+import CancelBookingButton from "./CancelBookingButton";
 
 type Booking = {
   _id: string;
@@ -38,9 +38,7 @@ const MyBookingsPage = async () => {
           Please Sign In
         </h2>
 
-        <p className="mt-2 text-gray-500">
-          Sign in to see your booked events.
-        </p>
+        <p className="mt-2 text-gray-500">Sign in to see your booked events.</p>
 
         <Link
           href="/login"
@@ -57,11 +55,20 @@ const MyBookingsPage = async () => {
   try {
     const res = await fetch(
       `http://localhost:8000/my-booking/${encodeURIComponent(user.email)}`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
 
     if (res.ok) {
       bookings = await res.json();
+
+      bookings.sort((a, b) => {
+        if (!a.eventDate) return 1;
+        if (!b.eventDate) return -1;
+
+        return (
+          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+        );
+      });
     }
   } catch (error) {
     console.error("Booking Fetch Error:", error);
@@ -70,7 +77,6 @@ const MyBookingsPage = async () => {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 text-sm font-semibold text-violet-600">
@@ -88,7 +94,8 @@ const MyBookingsPage = async () => {
 
           <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-700">
             <Ticket size={16} />
-            {bookings.length} {bookings.length === 1 ? "Event" : "Events"} Joined
+            {bookings.length} {bookings.length === 1 ? "Event" : "Events"}{" "}
+            Joined
           </p>
         </div>
 
@@ -100,7 +107,6 @@ const MyBookingsPage = async () => {
                 key={booking._id}
                 className="flex flex-col gap-5 overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:p-5"
               >
-
                 {/* Event Image */}
                 <div className="h-48 w-full shrink-0 overflow-hidden rounded-xl bg-violet-50 sm:h-36 sm:w-48">
                   {booking.imageUrl ? (
@@ -150,8 +156,11 @@ const MyBookingsPage = async () => {
                     View Details
                     <ArrowRight size={16} />
                   </Link>
+                  <CancelBookingButton
+                    bookingId={booking._id}
+                    userEmail={user.email}
+                  />
                 </div>
-
               </div>
             ))}
           </div>
@@ -165,7 +174,8 @@ const MyBookingsPage = async () => {
             </h2>
 
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-500">
-              You haven't joined any events yet. Explore events and join your first one!
+              You haven't joined any events yet. Explore events and join your
+              first one!
             </p>
 
             <Link
@@ -178,7 +188,6 @@ const MyBookingsPage = async () => {
             </Link>
           </div>
         )}
-
       </div>
     </main>
   );

@@ -9,8 +9,19 @@ import {
   Sparkles,
 } from "lucide-react";
 
+type Event = {
+  _id: string;
+  eventName: string;
+  category?: string;
+  imageUrl?: string;
+  eventDate?: string;
+  eventTime?: string;
+  location?: string;
+  seats?: number;
+};
+
 const AllEventPage = async () => {
-  let events = [];
+  let events: Event[] = [];
 
   try {
     const res = await fetch("http://localhost:8000/all-events", {
@@ -19,6 +30,17 @@ const AllEventPage = async () => {
 
     if (res.ok) {
       events = await res.json();
+
+      // Sort events by date (earliest date first)
+      events.sort((a, b) => {
+        if (!a.eventDate) return 1;
+        if (!b.eventDate) return -1;
+
+        return (
+          new Date(a.eventDate).getTime() -
+          new Date(b.eventDate).getTime()
+        );
+      });
     }
   } catch (error) {
     console.log("Failed to load events:", error);
@@ -52,7 +74,6 @@ const AllEventPage = async () => {
         {/* Event Cards */}
         {events.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-
             {events.map((event) => (
               <Link
                 href={`/events/${event._id}`}
@@ -63,54 +84,62 @@ const AllEventPage = async () => {
 
                   {/* Event Image */}
                   <div className="relative h-52 overflow-hidden bg-violet-100">
-                    <img
-                      src={event.imageUrl}
-                      alt={event.eventName}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
+                    {event.imageUrl ? (
+                      <img
+                        src={event.imageUrl}
+                        alt={event.eventName}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <CalendarDays size={40} className="text-violet-300" />
+                      </div>
+                    )}
 
                     <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-violet-700 shadow-sm">
-                      {event.category}
+                      {event.category || "Event"}
                     </span>
                   </div>
 
                   {/* Event Information */}
                   <div className="p-5">
-
                     <h2 className="mb-3 line-clamp-1 text-xl font-bold text-gray-900 transition group-hover:text-violet-600">
                       {event.eventName}
                     </h2>
 
                     <div className="space-y-3 text-sm text-gray-500">
-
                       <div className="flex items-center gap-3">
                         <CalendarDays size={17} className="shrink-0 text-violet-600" />
                         <span>
                           {event.eventDate
-                            ? new Date(`${event.eventDate}T00:00:00`).toLocaleDateString("en-US", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              })
+                            ? new Date(`${event.eventDate}T00:00:00`).toLocaleDateString(
+                                "en-US",
+                                {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                }
+                              )
                             : "Date not available"}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
                         <Clock size={17} className="shrink-0 text-violet-600" />
-                        <span>{event.eventTime}</span>
+                        <span>{event.eventTime || "Time unavailable"}</span>
                       </div>
 
                       <div className="flex items-center gap-3">
                         <MapPin size={17} className="shrink-0 text-violet-600" />
-                        <span className="line-clamp-1">{event.location}</span>
+                        <span className="line-clamp-1">
+                          {event.location || "Location unavailable"}
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-3">
                         <Users size={17} className="shrink-0 text-violet-600" />
-                        <span>{event.seats} Available Seats</span>
+                        <span>{event.seats ?? 0} Available Seats</span>
                       </div>
-
                     </div>
 
                     {/* View Details */}
@@ -124,12 +153,10 @@ const AllEventPage = async () => {
                         className="text-violet-600 transition group-hover:translate-x-1"
                       />
                     </div>
-
                   </div>
                 </div>
               </Link>
             ))}
-
           </div>
         ) : (
           <div className="rounded-2xl border border-violet-100 bg-white px-5 py-16 text-center shadow-sm">
@@ -152,7 +179,6 @@ const AllEventPage = async () => {
             </Link>
           </div>
         )}
-
       </div>
     </main>
   );

@@ -100,7 +100,7 @@ const Navbar = () => {
             className="flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-violet-700"
           >
             <Compass size={18} />
-            Explore Events
+            Upcoming Events
           </Link>
 
           {/* Manage Events */}
