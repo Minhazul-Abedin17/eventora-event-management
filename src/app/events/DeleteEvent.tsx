@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Trash2, X } from "lucide-react";
 import { toast } from "react-toastify";
+import { getTokenFromClient } from "@/lib/getTokenFromClient";
 
 type Props = {
   eventId: string;
@@ -16,22 +17,40 @@ const DeleteEvent = ({ eventId, ownerEmail, onDelete }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
-    setLoading(true);
+    const token = await getTokenFromClient();
 
-    const response = await fetch(
-      `http://localhost:8000/all-events/${eventId}?email=${encodeURIComponent(ownerEmail)}`,
-      { method: "DELETE" }
-    );
-
-    if (response.ok) {
-      toast.success("Event deleted successfully!");
-      setIsOpen(false);
-      onDelete();
-    } else {
-      toast.error("Failed to delete event.");
+    if (!token) {
+      toast.error("Please login first.");
+      return;
     }
 
-    setLoading(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/all-events/${eventId}?email=${ownerEmail}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.deletedCount > 0) {
+        toast.success("Event deleted successfully!");
+        setIsOpen(false);
+        onDelete();
+      } else {
+        toast.error(data.message || "Failed to delete event.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,6 +72,7 @@ const DeleteEvent = ({ eventId, ownerEmail, onDelete }: Props) => {
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
+                disabled={loading}
                 className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
               >
                 <X size={20} />
@@ -67,6 +87,7 @@ const DeleteEvent = ({ eventId, ownerEmail, onDelete }: Props) => {
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 onClick={() => setIsOpen(false)}
+                disabled={loading}
                 className="rounded-lg border border-gray-300 px-5 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
               >
                 Cancel

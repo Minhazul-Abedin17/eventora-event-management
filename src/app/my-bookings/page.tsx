@@ -1,5 +1,8 @@
+
 import { auth } from "@/lib/auth";
+import { getTokenFromServer } from "@/lib/getTokenFromServer";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -38,7 +41,9 @@ const MyBookingsPage = async () => {
           Please Sign In
         </h2>
 
-        <p className="mt-2 text-gray-500">Sign in to see your booked events.</p>
+        <p className="mt-2 text-gray-500">
+          Sign in to see your booked events.
+        </p>
 
         <Link
           href="/login"
@@ -50,34 +55,42 @@ const MyBookingsPage = async () => {
     );
   }
 
+  // Get JWT Token
+  const token = await getTokenFromServer();
+
+  if (!token) {
+    redirect("/login");
+  }
+
   let bookings: Booking[] = [];
 
-  try {
-    const res = await fetch(
-      `http://localhost:8000/my-booking/${encodeURIComponent(user.email)}`,
-      { cache: "no-store" },
-    );
-
-    if (res.ok) {
-      bookings = await res.json();
-
-      bookings.sort((a, b) => {
-        if (!a.eventDate) return 1;
-        if (!b.eventDate) return -1;
-
-        return (
-          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-        );
-      });
+  const res = await fetch(
+    `http://localhost:8000/my-booking/${encodeURIComponent(user.email)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
     }
-  } catch (error) {
-    console.error("Booking Fetch Error:", error);
+  );
+
+  if (res.ok) {
+    bookings = await res.json();
+
+    bookings.sort((a, b) => {
+      if (!a.eventDate) return 1;
+      if (!b.eventDate) return -1;
+
+      return (
+        new Date(a.eventDate).getTime() -
+        new Date(b.eventDate).getTime()
+      );
+    });
   }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 text-sm font-semibold text-violet-600">
             <Ticket size={18} />
@@ -99,7 +112,6 @@ const MyBookingsPage = async () => {
           </p>
         </div>
 
-        {/* Booking List */}
         {bookings.length > 0 ? (
           <div className="space-y-5">
             {bookings.map((booking) => (
@@ -107,7 +119,6 @@ const MyBookingsPage = async () => {
                 key={booking._id}
                 className="flex flex-col gap-5 overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:p-5"
               >
-                {/* Event Image */}
                 <div className="h-48 w-full shrink-0 overflow-hidden rounded-xl bg-violet-50 sm:h-36 sm:w-48">
                   {booking.imageUrl ? (
                     <img
@@ -122,7 +133,6 @@ const MyBookingsPage = async () => {
                   )}
                 </div>
 
-                {/* Event Information */}
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="w-fit rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
                     {booking.category || "Event"}
@@ -156,6 +166,7 @@ const MyBookingsPage = async () => {
                     View Details
                     <ArrowRight size={16} />
                   </Link>
+
                   <CancelBookingButton
                     bookingId={booking._id}
                     userEmail={user.email}
@@ -165,7 +176,6 @@ const MyBookingsPage = async () => {
             ))}
           </div>
         ) : (
-          /* Empty State */
           <div className="rounded-3xl border border-dashed border-violet-200 bg-white px-5 py-16 text-center">
             <Ticket size={42} className="mx-auto text-violet-400" />
 
@@ -174,7 +184,7 @@ const MyBookingsPage = async () => {
             </h2>
 
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-500">
-              You haven't joined any events yet. Explore events and join your
+              You haven&apos;t joined any events yet. Explore events and join your
               first one!
             </p>
 

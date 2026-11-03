@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,7 +9,6 @@ import {
   Users,
   ArrowLeft,
 } from "lucide-react";
-
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { authClient } from "@/lib/auth-client";
@@ -29,7 +27,7 @@ import {
 const CreateEventPage = () => {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     eventName: "",
     category: "",
@@ -50,7 +48,13 @@ const CreateEventPage = () => {
       String(date.getDate()).padStart(2, "0"),
     ].join("-");
 
-    document.getElementById("eventDate")?.setAttribute("min", today);
+    const dateInput = document.getElementById(
+      "eventDate"
+    ) as HTMLInputElement | null;
+
+    if (dateInput) {
+      dateInput.min = today;
+    }
   }, []);
 
   const handleChange = (
@@ -66,17 +70,25 @@ const CreateEventPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (isPending) return;
-
+    if (isPending || isSubmitting) return;
     if (!user?.email) {
       toast.error("Please login before creating an event.");
       return;
     }
-
+    setIsSubmitting(true);
     try {
+      // Get JWT Token from Better Auth
+      const { data, error } = await authClient.token();
+
+      if (error || !data?.token) {
+        console.error("JWT Token Error:", error);
+        toast.error("Authentication failed. Please login again.");
+        return;
+      }
+
       const eventData = {
         ...form,
+        seats: Number(form.seats),
         email: user.email,
         organizer: {
           name: user.name,
@@ -85,17 +97,25 @@ const CreateEventPage = () => {
         },
       };
 
+      // Send Event Data to Backend
       const res = await fetch("http://localhost:8000/create-event", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${data?.token}`,
         },
         body: JSON.stringify(eventData),
       });
 
-      const data = await res.json();
+      const result = await res.json();
 
-      if (res.ok && data.acknowledged) {
+      if (!res.ok) {
+        console.error("Backend Error:", result);
+        toast.error(result.message || "Event creation failed!");
+        return;
+      }
+
+      if (result.acknowledged) {
         toast.success("Your event has been created successfully!");
 
         setForm({
@@ -112,8 +132,10 @@ const CreateEventPage = () => {
         toast.error("Event creation failed! Please try again.");
       }
     } catch (error) {
-      console.log("Error:", error);
+      console.error("Create Event Error:", error);
       toast.error("Server error! Please check your connection.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -244,6 +266,7 @@ const CreateEventPage = () => {
                       id="eventDate"
                       name="eventDate"
                       type="date"
+                      min={new Date().toLocaleDateString("en-CA")}
                       value={form.eventDate}
                       onChange={handleChange}
                       required
@@ -345,10 +368,11 @@ const CreateEventPage = () => {
 
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="h-11 rounded-lg bg-violet-600 px-8 font-semibold text-white hover:bg-violet-700"
                 >
                   <CalendarDays size={18} />
-                  Create Event
+                  {isSubmitting ? "Creating Event..." : "Create Event"}
                 </Button>
               </div>
             </form>

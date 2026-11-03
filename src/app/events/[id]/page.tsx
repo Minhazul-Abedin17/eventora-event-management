@@ -11,26 +11,59 @@ import {
   Mail,
   CheckCircle2,
 } from "lucide-react";
-import JoinEventButton from "@/components/JoinEventButton";
 
-const EventDetailsPage = async ({ params }) => {
+import JoinEventButton from "@/components/JoinEventButton";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+interface EventDetailsPageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+const EventDetailsPage = async ({ params }: EventDetailsPageProps) => {
   const { id } = await params;
 
-  let event;
+  // Get JWT Token from Better Auth
+  const jwtToken = await auth.api.getToken({
+    headers: await headers(),
+  });
 
-  try {
-    const res = await fetch(`http://localhost:8000/all-events/${id}`, {
-      cache: "no-store",
-    });
+  console.log("JWT Token:", jwtToken?.token);
 
-    if (!res.ok) {
-      notFound();
-    }
+  // Check if token exists
+  if (!jwtToken?.token) {
+    throw new Error("JWT token not found. Please login again.");
+  }
 
-    event = await res.json();
-  } catch (error) {
+  // Fetch Event Details from Backend
+  const res = await fetch(`http://localhost:8000/all-events/${id}`, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${jwtToken.token}`,
+    },
+  });
+
+  // Handle Backend Errors
+  if (res.status === 404) {
     notFound();
   }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+
+    console.error("Backend Response:", res.status, errorData);
+
+    throw new Error(
+      errorData?.message || `Failed to fetch event: ${res.status}`
+    );
+  }
+
+  const event = await res.json();
+
+  console.log("Event Details:", event);
 
   const organizer = event.organizer || {};
 
@@ -46,7 +79,6 @@ const EventDetailsPage = async ({ params }) => {
     <main className="min-h-screen bg-slate-50 pb-16">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
-        {/* Back Button */}
         <Link
           href="/events"
           className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-violet-700"
@@ -88,7 +120,7 @@ const EventDetailsPage = async ({ params }) => {
           {/* Left Side */}
           <div className="space-y-8 lg:col-span-2">
 
-            {/* Event Details */}
+            {/* Event Overview */}
             <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
               <p className="text-sm font-bold uppercase tracking-wider text-violet-600">
                 About This Event
@@ -103,11 +135,8 @@ const EventDetailsPage = async ({ params }) => {
               </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
-
                 <div className="flex items-center gap-4 rounded-2xl bg-violet-50 p-4">
-                  <div className="rounded-xl bg-white p-3 text-violet-600">
-                    <CalendarDays size={22} />
-                  </div>
+                  <CalendarDays size={22} className="text-violet-600" />
                   <div>
                     <p className="text-xs text-slate-500">Event Date</p>
                     <p className="font-semibold text-slate-800">{eventDate}</p>
@@ -115,9 +144,7 @@ const EventDetailsPage = async ({ params }) => {
                 </div>
 
                 <div className="flex items-center gap-4 rounded-2xl bg-violet-50 p-4">
-                  <div className="rounded-xl bg-white p-3 text-violet-600">
-                    <Clock size={22} />
-                  </div>
+                  <Clock size={22} className="text-violet-600" />
                   <div>
                     <p className="text-xs text-slate-500">Event Time</p>
                     <p className="font-semibold text-slate-800">
@@ -127,9 +154,7 @@ const EventDetailsPage = async ({ params }) => {
                 </div>
 
                 <div className="flex items-center gap-4 rounded-2xl bg-violet-50 p-4">
-                  <div className="rounded-xl bg-white p-3 text-violet-600">
-                    <MapPin size={22} />
-                  </div>
+                  <MapPin size={22} className="text-violet-600" />
                   <div>
                     <p className="text-xs text-slate-500">Location</p>
                     <p className="font-semibold text-slate-800">
@@ -139,9 +164,7 @@ const EventDetailsPage = async ({ params }) => {
                 </div>
 
                 <div className="flex items-center gap-4 rounded-2xl bg-violet-50 p-4">
-                  <div className="rounded-xl bg-white p-3 text-violet-600">
-                    <Users size={22} />
-                  </div>
+                  <Users size={22} className="text-violet-600" />
                   <div>
                     <p className="text-xs text-slate-500">Available Seats</p>
                     <p className="font-semibold text-slate-800">
@@ -149,7 +172,6 @@ const EventDetailsPage = async ({ params }) => {
                     </p>
                   </div>
                 </div>
-
               </div>
             </section>
 
@@ -168,41 +190,38 @@ const EventDetailsPage = async ({ params }) => {
               </p>
 
               <div className="mt-6 space-y-4">
-
-                <div className="flex gap-4 rounded-2xl bg-slate-50 p-4">
-                  <CheckCircle2 className="mt-1 shrink-0 text-violet-600" />
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Be On Time</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Arrive at the venue at least 15 minutes before the event starts.
-                    </p>
+                {[
+                  {
+                    title: "Be On Time",
+                    description:
+                      "Arrive at the venue at least 15 minutes before the event starts.",
+                  },
+                  {
+                    title: "Dress Appropriately",
+                    description:
+                      "Wear clean and comfortable clothing suitable for the event.",
+                  },
+                  {
+                    title: "Work As A Team",
+                    description:
+                      "Follow the organizer's instructions and cooperate with others.",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="flex gap-4 rounded-2xl bg-slate-50 p-4"
+                  >
+                    <CheckCircle2 className="mt-1 shrink-0 text-violet-600" />
+                    <div>
+                      <h3 className="font-semibold text-slate-800">
+                        {item.title}
+                      </h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex gap-4 rounded-2xl bg-slate-50 p-4">
-                  <CheckCircle2 className="mt-1 shrink-0 text-violet-600" />
-                  <div>
-                    <h3 className="font-semibold text-slate-800">
-                      Dress Appropriately
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Wear clean and comfortable clothing suitable for the event.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 rounded-2xl bg-slate-50 p-4">
-                  <CheckCircle2 className="mt-1 shrink-0 text-violet-600" />
-                  <div>
-                    <h3 className="font-semibold text-slate-800">
-                      Work As A Team
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Follow the organizer's instructions and cooperate with others.
-                    </p>
-                  </div>
-                </div>
-
+                ))}
               </div>
             </section>
 
@@ -217,7 +236,6 @@ const EventDetailsPage = async ({ params }) => {
               </h2>
 
               <div className="mt-6 flex flex-col gap-4 rounded-2xl bg-slate-50 p-5 sm:flex-row sm:items-center">
-
                 {organizer.image ? (
                   <img
                     src={organizer.image}
@@ -246,13 +264,11 @@ const EventDetailsPage = async ({ params }) => {
                 </div>
               </div>
             </section>
-
           </div>
 
-          {/* Right Side - Join Event */}
+          {/* Join Event */}
           <aside>
             <section className="sticky top-24 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
-
               <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
                 <Users size={28} />
               </div>
@@ -272,10 +288,8 @@ const EventDetailsPage = async ({ params }) => {
               <p className="mt-4 text-center text-xs text-slate-400">
                 Be part of something meaningful.
               </p>
-
             </section>
           </aside>
-
         </div>
       </div>
     </main>

@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { getTokenFromClient } from "@/lib/getTokenFromClient";
 import { Users, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -17,6 +19,7 @@ const JoinEventButton = ({ event }: { event: any }) => {
 
   const eventId = String(event?._id || event?.id || "");
 
+  // Check if user already joined this event
   useEffect(() => {
     const checkBooking = async () => {
       if (isPending) return;
@@ -26,10 +29,24 @@ const JoinEventButton = ({ event }: { event: any }) => {
         return;
       }
 
+      setChecking(true);
+
       try {
+        const token = await getTokenFromClient();
+
+        if (!token) {
+          setChecking(false);
+          return;
+        }
+
         const res = await fetch(
-          `http://localhost:8000/my-booking/check?email=${encodeURIComponent(user.email)}&eventId=${eventId}`,
-          { cache: "no-store" },
+          `http://localhost:8000/my-booking/check?email=${user.email}&eventId=${eventId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+          }
         );
 
         const result = await res.json();
@@ -49,6 +66,7 @@ const JoinEventButton = ({ event }: { event: any }) => {
     checkBooking();
   }, [user?.email, isPending, eventId]);
 
+  // Join event
   const handleJoin = async () => {
     if (!user) {
       toast.error("Please sign in to join this event.");
@@ -59,6 +77,13 @@ const JoinEventButton = ({ event }: { event: any }) => {
 
     try {
       setLoading(true);
+
+      const token = await getTokenFromClient();
+
+      if (!token) {
+        toast.error("Please login first.");
+        return;
+      }
 
       const joinData = {
         eventId,
@@ -77,6 +102,7 @@ const JoinEventButton = ({ event }: { event: any }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(joinData),
       });
@@ -92,7 +118,7 @@ const JoinEventButton = ({ event }: { event: any }) => {
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Something went wrong!",
+        error instanceof Error ? error.message : "Something went wrong!"
       );
     } finally {
       setLoading(false);

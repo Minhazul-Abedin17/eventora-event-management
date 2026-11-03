@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { getTokenFromClient } from "@/lib/getTokenFromClient";
 import EditEvent from "../events/EditEvent";
 import DeleteEvent from "../events/DeleteEvent";
 
@@ -41,31 +43,50 @@ const MyCreatedEvents = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isPending) {
+      return;
+    }
+
     if (!user?.email) {
       setLoading(false);
       return;
     }
 
-    fetch(
-      `http://localhost:8000/my-created-events/${encodeURIComponent(user.email)}`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        data.sort((a: Event, b: Event) => {
-          const dateA = a.eventDate || a.date;
-          const dateB = b.eventDate || b.date;
+    const loadEvents = async () => {
+      const token = await getTokenFromClient();
 
-          if (!dateA) return 1;
-          if (!dateB) return -1;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-          return new Date(dateA).getTime() - new Date(dateB).getTime();
-        });
-
-        setEvents(data);
+      fetch(`http://localhost:8000/my-created-events/${user.email}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
-      .catch(() => console.log("Failed to load events"))
-      .finally(() => setLoading(false));
-  }, [user?.email]);
+        .then((res) => res.json())
+        .then((data) => {
+          data.sort((a: Event, b: Event) => {
+            const dateA = a.eventDate || a.date;
+            const dateB = b.eventDate || b.date;
+
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+
+            return (
+              new Date(dateA).getTime() - new Date(dateB).getTime()
+            );
+          });
+
+          setEvents(data);
+        })
+        .catch(() => console.log("Failed to load events"))
+        .finally(() => setLoading(false));
+    };
+
+    loadEvents();
+  }, [user?.email, isPending]);
 
   const handleDelete = (id: string) => {
     setEvents(events.filter((event) => event._id !== id));
@@ -86,10 +107,15 @@ const MyCreatedEvents = () => {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
         <Ticket className="mb-4 h-12 w-12 text-violet-500" />
-        <h2 className="text-2xl font-bold text-gray-900">Please Login First</h2>
+
+        <h2 className="text-2xl font-bold text-gray-900">
+          Please Login First
+        </h2>
+
         <p className="mt-2 text-gray-500">
           Login to see the events you have created.
         </p>
+
         <Link
           href="/login"
           className="mt-6 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white hover:bg-violet-700"
@@ -103,6 +129,7 @@ const MyCreatedEvents = () => {
   return (
     <main className="min-h-screen bg-[#f8f7fc] px-4 py-10 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
+
         {/* Page Header */}
         <div className="mb-9 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
@@ -132,7 +159,10 @@ const MyCreatedEvents = () => {
         {/* Total Events */}
         <div className="mb-7 flex items-center justify-between rounded-2xl border border-violet-100 bg-white p-5 shadow-sm">
           <div>
-            <p className="text-sm text-gray-500">Total Events Created</p>
+            <p className="text-sm text-gray-500">
+              Total Events Created
+            </p>
+
             <h2 className="mt-1 text-3xl font-bold text-gray-900">
               {events.length}
             </h2>
@@ -197,14 +227,20 @@ const MyCreatedEvents = () => {
                     </div>
 
                     <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <Clock size={17} className="shrink-0 text-violet-600" />
+                      <Clock
+                        size={17}
+                        className="shrink-0 text-violet-600"
+                      />
                       <span>
                         {event.eventTime || event.time || "Time not added"}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <MapPin size={17} className="shrink-0 text-violet-600" />
+                      <MapPin
+                        size={17}
+                        className="shrink-0 text-violet-600"
+                      />
                       <span className="line-clamp-1">
                         {event.location || "Location not added"}
                       </span>
@@ -222,7 +258,10 @@ const MyCreatedEvents = () => {
                     </Link>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <EditEvent event={event} ownerEmail={user.email} />
+                      <EditEvent
+                        event={event}
+                        ownerEmail={user.email}
+                      />
 
                       <DeleteEvent
                         eventId={event._id}

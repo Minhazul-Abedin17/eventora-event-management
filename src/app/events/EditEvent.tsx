@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Pencil, X } from "lucide-react";
 import { toast } from "react-toastify";
+import { getTokenFromClient } from "@/lib/getTokenFromClient";
 
 type Event = {
   _id: string;
@@ -50,6 +51,14 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const token = await getTokenFromClient();
+
+    if (!token) {
+      toast.error("Please login first.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -59,6 +68,7 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             ...formData,
@@ -67,18 +77,20 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
         }
       );
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.modifiedCount > 0) {
         toast.success("Event updated successfully!");
         setIsOpen(false);
         window.location.reload();
       } else {
-        toast.error("Failed to update event.");
+        toast.error(data.message || "Failed to update event.");
       }
     } catch (error) {
       toast.error("Something went wrong!");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -95,8 +107,6 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
           <div className="my-auto w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-8">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -110,13 +120,13 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
+                disabled={loading}
                 className="rounded-full bg-gray-100 p-2 text-gray-600 transition hover:bg-red-100 hover:text-red-600"
               >
                 <X size={21} />
               </button>
             </div>
 
-            {/* Form */}
             <form
               onSubmit={handleUpdate}
               className="max-h-[calc(100vh-170px)] space-y-5 overflow-y-auto px-5 py-6 sm:px-8"
@@ -233,11 +243,11 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
                 />
               </div>
 
-              {/* Buttons */}
               <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
+                  disabled={loading}
                   className="rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel

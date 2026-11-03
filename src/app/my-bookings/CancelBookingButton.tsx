@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { getTokenFromClient } from "@/lib/getTokenFromClient";
 
 type Props = {
   bookingId: string;
@@ -14,22 +15,30 @@ const CancelBookingButton = ({ bookingId, userEmail }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const handleCancel = async () => {
+    const token = await getTokenFromClient();
+
+    if (!token) {
+      toast.error("Please login first.");
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      const res = await fetch(
-        `http://localhost:8000/my-booking/${bookingId}?email=${encodeURIComponent(userEmail)}`,
-        { method: "DELETE" }
-      );
-
-      if (res.ok) {
-        toast.success("Booking cancelled successfully!");
-        window.location.reload();
-      } else {
-        toast.error("Failed to cancel booking.");
+    const res = await fetch(
+      `http://localhost:8000/my-booking/${bookingId}?email=${userEmail}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      toast.error("Something went wrong!");
+    );
+
+    if (res.ok) {
+      toast.success("Booking cancelled successfully!");
+      window.location.reload();
+    } else {
+      toast.error("Failed to cancel booking.");
     }
 
     setLoading(false);

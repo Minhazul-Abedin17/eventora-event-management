@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   CalendarDays,
   Clock,
@@ -8,6 +9,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { getTokenFromServer } from "@/lib/getTokenFromServer";
 
 type Event = {
   _id: string;
@@ -21,17 +23,40 @@ type Event = {
 };
 
 const AllEventPage = async () => {
+  let token: string | null = null;
+
+  // Get token safely
+  try {
+    token = await getTokenFromServer();
+  } catch (error) {
+    console.log("User is not logged in:", error);
+  }
+
+  // Redirect if user is not logged in
+  if (!token) {
+    redirect("/login");
+  }
+
   let events: Event[] = [];
 
+  // Fetch events from backend
   try {
     const res = await fetch("http://localhost:8000/all-events", {
       cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
+    // Redirect if token is invalid or expired
+    if (res.status === 401) {
+      redirect("/login");
+    }
 
     if (res.ok) {
       events = await res.json();
 
-      // Sort events by date (earliest date first)
+      // Sort events by date
       events.sort((a, b) => {
         if (!a.eventDate) return 1;
         if (!b.eventDate) return -1;
@@ -43,7 +68,18 @@ const AllEventPage = async () => {
       });
     }
   } catch (error) {
-    console.log("Failed to load events:", error);
+    // Do not swallow Next.js redirect errors
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof error.digest === "string" &&
+      error.digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
+
+    console.error("Failed to load events:", error);
   }
 
   return (
@@ -92,7 +128,10 @@ const AllEventPage = async () => {
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <CalendarDays size={40} className="text-violet-300" />
+                        <CalendarDays
+                          size={40}
+                          className="text-violet-300"
+                        />
                       </div>
                     )}
 
@@ -109,36 +148,51 @@ const AllEventPage = async () => {
 
                     <div className="space-y-3 text-sm text-gray-500">
                       <div className="flex items-center gap-3">
-                        <CalendarDays size={17} className="shrink-0 text-violet-600" />
+                        <CalendarDays
+                          size={17}
+                          className="shrink-0 text-violet-600"
+                        />
                         <span>
                           {event.eventDate
-                            ? new Date(`${event.eventDate}T00:00:00`).toLocaleDateString(
-                                "en-US",
-                                {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                }
-                              )
+                            ? new Date(
+                                `${event.eventDate}T00:00:00`
+                              ).toLocaleDateString("en-US", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
                             : "Date not available"}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Clock size={17} className="shrink-0 text-violet-600" />
-                        <span>{event.eventTime || "Time unavailable"}</span>
+                        <Clock
+                          size={17}
+                          className="shrink-0 text-violet-600"
+                        />
+                        <span>
+                          {event.eventTime || "Time unavailable"}
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <MapPin size={17} className="shrink-0 text-violet-600" />
+                        <MapPin
+                          size={17}
+                          className="shrink-0 text-violet-600"
+                        />
                         <span className="line-clamp-1">
                           {event.location || "Location unavailable"}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Users size={17} className="shrink-0 text-violet-600" />
-                        <span>{event.seats ?? 0} Available Seats</span>
+                        <Users
+                          size={17}
+                          className="shrink-0 text-violet-600"
+                        />
+                        <span>
+                          {event.seats ?? 0} Available Seats
+                        </span>
                       </div>
                     </div>
 
@@ -160,7 +214,10 @@ const AllEventPage = async () => {
           </div>
         ) : (
           <div className="rounded-2xl border border-violet-100 bg-white px-5 py-16 text-center shadow-sm">
-            <CalendarDays size={45} className="mx-auto mb-4 text-violet-400" />
+            <CalendarDays
+              size={45}
+              className="mx-auto mb-4 text-violet-400"
+            />
 
             <h2 className="text-xl font-bold text-gray-800">
               No Events Available Yet
