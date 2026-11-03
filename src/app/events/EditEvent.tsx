@@ -63,7 +63,7 @@ const EditEvent = ({ event, ownerEmail }: Props) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/all-events/${event._id}`,
+        `${process.env.NEXT_PUBLIC_URL}/all-events/${event._id}`,
         {
           method: "PATCH",
           headers: {

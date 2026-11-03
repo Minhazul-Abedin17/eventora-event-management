@@ -22,7 +22,7 @@ const RecentUpcomingEvents = async () => {
   let events: Event[] = [];
 
   try {
-    const res = await fetch("http://localhost:8000/upcoming-events", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/upcoming-events`, {
       cache: "no-store",
     });
 
@@ -39,7 +39,7 @@ const RecentUpcomingEvents = async () => {
         <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <span className="rounded-full bg-violet-100 px-4 py-2 text-sm font-semibold text-violet-700">
-              Don't Miss Out
+              Don&apos;t Miss Out
             </span>
 
             <h2 className="mt-5 text-3xl font-bold text-gray-900 sm:text-4xl">

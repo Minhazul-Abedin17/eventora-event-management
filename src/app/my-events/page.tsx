@@ -60,7 +60,7 @@ const MyCreatedEvents = () => {
         return;
       }
 
-      fetch(`http://localhost:8000/my-created-events/${user.email}`, {
+      fetch(`${process.env.NEXT_PUBLIC_URL}/my-created-events/${user.email}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

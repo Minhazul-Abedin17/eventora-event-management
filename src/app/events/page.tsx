@@ -41,7 +41,7 @@ const AllEventPage = async () => {
 
   // Fetch events from backend
   try {
-    const res = await fetch("http://localhost:8000/all-events", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/all-events`, {
       cache: "no-store",
       headers: {
         Authorization: `Bearer ${token}`,

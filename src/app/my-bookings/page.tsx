@@ -65,7 +65,7 @@ const MyBookingsPage = async () => {
   let bookings: Booking[] = [];
 
   const res = await fetch(
-    `http://localhost:8000/my-booking/${encodeURIComponent(user.email)}`,
+    `${process.env.NEXT_PUBLIC_URL}/my-booking/${encodeURIComponent(user.email)}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,

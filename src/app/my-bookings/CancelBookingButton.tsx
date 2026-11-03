@@ -25,7 +25,7 @@ const CancelBookingButton = ({ bookingId, userEmail }: Props) => {
     setLoading(true);
 
     const res = await fetch(
-      `http://localhost:8000/my-booking/${bookingId}?email=${userEmail}`,
+      `${process.env.NEXT_PUBLIC_URL}/my-booking/${bookingId}?email=${userEmail}`,
       {
         method: "DELETE",
         headers: {

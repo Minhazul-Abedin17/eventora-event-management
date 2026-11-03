@@ -2,7 +2,6 @@
 import Link from "next/link";
 import {
   CalendarHeart,
-  ArrowLeft,
   Home,
   Search,
 } from "lucide-react";

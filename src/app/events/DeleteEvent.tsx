@@ -28,7 +28,7 @@ const DeleteEvent = ({ eventId, ownerEmail, onDelete }: Props) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/all-events/${eventId}?email=${ownerEmail}`,
+        `${process.env.NEXT_PUBLIC_URL}/all-events/${eventId}?email=${ownerEmail}`,
         {
           method: "DELETE",
           headers: {

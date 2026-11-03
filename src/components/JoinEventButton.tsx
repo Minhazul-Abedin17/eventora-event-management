@@ -98,7 +98,7 @@ const JoinEventButton = ({ event }: { event: any }) => {
         image: user.image || "",
       };
 
-      const res = await fetch("http://localhost:8000/my-booking", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/my-booking`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

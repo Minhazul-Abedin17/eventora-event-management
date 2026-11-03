@@ -38,7 +38,7 @@ const EventDetailsPage = async ({ params }: EventDetailsPageProps) => {
   }
 
   // Fetch Event Details from Backend
-  const res = await fetch(`http://localhost:8000/all-events/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/all-events/${id}`, {
     method: "GET",
     cache: "no-store",
     headers: {
